@@ -1,0 +1,4 @@
+(fp_lib_table
+  (lib (name Shutter_RF)(type KiCad)(uri ${KIPRJMOD}/Shutter_RF.pretty)(options "")(descr ""))
+  (lib (name BK_Common)(type KiCad)(uri "/home/balazs/Documents/Shutter Ctrl/BK_Common.pretty")(options "")(descr ""))
+)
