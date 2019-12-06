@@ -44,7 +44,7 @@ extern volatile uint16_t EV1527_last_edge;
 /* Private functions ---------------------------------------------------------*/
 /* Public functions ----------------------------------------------------------*/
 
-#ifndef _COSMIC_
+#ifdef _COSMIC_
 /**
   * @brief Dummy Interrupt routine
   * @par Parameters:

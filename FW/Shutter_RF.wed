@@ -44,7 +44,7 @@ ptn_Child33=Bar-32
 
 [WorkState_v1_2.DockState.Bar-0]
 BarID=59419
-Bars=21
+Bars=24
 Bar#0=0
 Bar#1=59647
 Bar#2=0
@@ -66,6 +66,9 @@ Bar#17=0
 Bar#18=0
 Bar#19=32768
 Bar#20=0
+Bar#21=0
+Bar#22=0
+Bar#23=0
 Style=0
 ExStyle=0
 PrevFloating=False
@@ -331,10 +334,10 @@ BarID=59647
 MRUWidth=234
 Docking=True
 MRUDockID=59419
-MRUDockLeftPos=-1
-MRUDockTopPos=-1
-MRUDockRightPos=1279
-MRUDockBottomPos=28
+MRUDockLeftPos=8
+MRUDockTopPos=31
+MRUDockRightPos=1288
+MRUDockBottomPos=60
 MRUFloatStyle=8196
 MRUFloatXPos=-1
 MRUFloatYPos=0
@@ -762,10 +765,10 @@ XPos=1
 YPos=5
 Docking=True
 MRUDockID=0
-MRUDockLeftPos=1
-MRUDockTopPos=5
-MRUDockRightPos=1280
-MRUDockBottomPos=155
+MRUDockLeftPos=8
+MRUDockTopPos=31
+MRUDockRightPos=1287
+MRUDockBottomPos=181
 MRUFloatStyle=4
 MRUFloatXPos=-1
 MRUFloatYPos=0
@@ -1244,7 +1247,7 @@ ptn_Child2=ChildFrames
 
 [WorkState_v1_2.Frames.MainFrame]
 WindowPlacement=MCAAAAAACAAAAAAADAAAAAAAPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPAAAAAAAAAAAAAAAANKDAAAAAPJCAAAAA
-Title=ST Visual Develop - Shutter_RF.stw* - [main.c]
+Title=ST Visual Develop - Shutter_RF.stw - [main.c]
 
 [WorkState_v1_2.Frames.ChildFrames]
 ptn_Child1=Document-0

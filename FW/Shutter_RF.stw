@@ -6,3 +6,7 @@ Keyword=ST7Workspace-V0.7
 [Project0]
 Filename=shutter_rf.stp
 Dependencies=
+[Options]
+ActiveProject=shutter_rf
+ActiveConfig=Debug
+AddSortedElements=0
