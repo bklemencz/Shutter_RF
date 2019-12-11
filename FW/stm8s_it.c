@@ -35,11 +35,19 @@
   */
 
 /* Private typedef -----------------------------------------------------------*/
+extern const uint8_t EXT_SW_DEBOUNCE_MS;
 /* Private define ------------------------------------------------------------*/
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
+extern volatile uint16_t Timer_last_valid_packet_10us;
 extern volatile uint8_t Timer_10us_to_ms;
-extern volatile uint16_t EV1527_last_edge;
+extern volatile uint16_t Timer_last_edge_10us;
+extern volatile bool Ext_SW_Pressed;
+extern volatile bool Ext_SW_Released;
+extern volatile uint8_t Ext_SW_Debounce_Timeout_ms;
+extern volatile uint8_t Serial_Rx_Buffer[5];
+extern volatile uint8_t Serial_Rx_Counter;
+
 /* Private function prototypes -----------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/
 /* Public functions ----------------------------------------------------------*/
@@ -114,11 +122,20 @@ INTERRUPT_HANDLER(CLK_IRQHandler, 2)
   * @param  None
   * @retval None
   */
-INTERRUPT_HANDLER(EXTI_PORTA_IRQHandler, 3)
+@svlreg INTERRUPT_HANDLER(EXTI_PORTA_IRQHandler, 3)
 {
   /* In order to detect unexpected events during development,
      it is recommended to set a breakpoint on the following instruction.
   */
+
+  if (GPIO_ReadInputPin(GPIOA,GPIO_PIN_1) == SET) 
+  {
+    EV1527_Receive_Parse(TRUE,Timer_last_edge_10us);
+  } else
+  {
+    EV1527_Receive_Parse(FALSE,Timer_last_edge_10us);
+  }
+  Timer_last_edge_10us = 0;
 }
 
 /**
@@ -155,6 +172,19 @@ INTERRUPT_HANDLER(EXTI_PORTD_IRQHandler, 6)
   /* In order to detect unexpected events during development,
      it is recommended to set a breakpoint on the following instruction.
   */
+ if (GPIO_ReadInputPin(GPIOD,GPIO_PIN_1) == SET) 
+  {
+    Ext_SW_Pressed = TRUE;
+    Ext_SW_Released = FALSE;
+    Ext_SW_Debounce_Timeout_ms = EXT_SW_DEBOUNCE_MS;
+  } else
+  {
+    if (Ext_SW_Debounce_Timeout_ms == 0)
+    { 
+      Ext_SW_Released = TRUE;
+      Ext_SW_Pressed = FALSE;
+    }
+  }
 }
 
 /**
@@ -347,6 +377,9 @@ INTERRUPT_HANDLER(TIM1_CAP_COM_IRQHandler, 12)
     /* In order to detect unexpected events during development,
        it is recommended to set a breakpoint on the following instruction.
     */
+   Serial_Rx_Buffer[Serial_Rx_Counter] = UART1_ReceiveData8();
+   Serial_Rx_Counter++;
+   if(Serial_Rx_Counter == 8) UART1_ITConfig(UART1_IT_RXNE_OR,DISABLE);
  }
 #endif /* (STM8S208) || (STM8S207) || (STM8S103) || (STM8S903) || (STM8AF62Ax) || (STM8AF52Ax) */
 
@@ -490,7 +523,8 @@ INTERRUPT_HANDLER(TIM6_UPD_OVF_TRG_IRQHandler, 23)
  {
    TIM4_ClearITPendingBit(TIM4_IT_UPDATE);
    Timer_10us_to_ms--;
-   EV1527_last_edge++;
+   Timer_last_edge_10us ++;
+   Timer_last_valid_packet_10us ++;
  }
 #endif /* (STM8S903) || (STM8AF622x)*/
 

@@ -26,3 +26,5 @@ fp-info-cache
 
 /FW/debug
 /FW/debug/*
+/FW/Release
+/FW/Release/*.*
