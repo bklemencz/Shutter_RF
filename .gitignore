@@ -28,3 +28,6 @@ fp-info-cache
 /FW/debug/*
 /FW/Release
 /FW/Release/*.*
+
+/Gerber 2x2
+/Gerber 2x2/*
