@@ -42,6 +42,9 @@ extern const uint8_t EXT_SW_DEBOUNCE_MS;
 extern volatile uint16_t Timer_last_valid_packet_10us;
 extern volatile uint8_t Timer_10us_to_ms;
 extern volatile uint16_t Timer_last_edge_10us;
+extern volatile uint16_t EV1527_Hightime;
+extern volatile uint16_t EV1527_LowTime;
+extern volatile bool EV1527_BitReady;
 extern volatile bool Ext_SW_Pressed;
 extern volatile bool Ext_SW_Released;
 extern volatile uint8_t Ext_SW_Debounce_Timeout_ms;
@@ -117,25 +120,35 @@ INTERRUPT_HANDLER(CLK_IRQHandler, 2)
   */
 }
 
+
+
+
 /**
   * @brief External Interrupt PORTA Interrupt routine.
   * @param  None
   * @retval None
   */
-@svlreg INTERRUPT_HANDLER(EXTI_PORTA_IRQHandler, 3)
+INTERRUPT_HANDLER(EXTI_PORTA_IRQHandler, 3)
 {
   /* In order to detect unexpected events during development,
      it is recommended to set a breakpoint on the following instruction.
   */
 
-  if (GPIO_ReadInputPin(GPIOA,GPIO_PIN_1) == SET) 
+   if ((GPIOA->IDR & GPIO_PIN_1) != 0)
   {
-    EV1527_Receive_Parse(TRUE,Timer_last_edge_10us);
-  } else
+    EV1527_LowTime = Timer_last_edge_10us;
+    if (EV1527_Hightime != 0) 
+    {
+      EV1527_BitReady = TRUE;
+    }
+				
+  } 
+	if ((GPIOA->IDR & GPIO_PIN_1) == 0)
   {
-    EV1527_Receive_Parse(FALSE,Timer_last_edge_10us);
+    EV1527_Hightime = Timer_last_edge_10us;
   }
-  Timer_last_edge_10us = 0;
+	Timer_last_edge_10us = 0;
+  
 }
 
 /**
@@ -171,20 +184,21 @@ INTERRUPT_HANDLER(EXTI_PORTD_IRQHandler, 6)
 {
   /* In order to detect unexpected events during development,
      it is recommended to set a breakpoint on the following instruction.
-  */
- if (GPIO_ReadInputPin(GPIOD,GPIO_PIN_1) == SET) 
+  
+ if ((GPIOD->IDR & GPIO_PIN_4) == 0) 
   {
     Ext_SW_Pressed = TRUE;
     Ext_SW_Released = FALSE;
     Ext_SW_Debounce_Timeout_ms = EXT_SW_DEBOUNCE_MS;
-  } else
+  } else 
+  if ((GPIOD->IDR & GPIO_PIN_4) != 0)
   {
-    if (Ext_SW_Debounce_Timeout_ms == 0)
-    { 
       Ext_SW_Released = TRUE;
       Ext_SW_Pressed = FALSE;
-    }
-  }
+			Ext_SW_Debounce_Timeout_ms = EXT_SW_DEBOUNCE_MS;
+  } 
+ */
+ 
 }
 
 /**
@@ -522,7 +536,7 @@ INTERRUPT_HANDLER(TIM6_UPD_OVF_TRG_IRQHandler, 23)
  INTERRUPT_HANDLER(TIM4_UPD_OVF_IRQHandler, 23)
  {
    TIM4_ClearITPendingBit(TIM4_IT_UPDATE);
-   Timer_10us_to_ms--;
+   Timer_10us_to_ms++;
    Timer_last_edge_10us ++;
    Timer_last_valid_packet_10us ++;
  }

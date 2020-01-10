@@ -41,7 +41,7 @@ struct interrupt_vector const _vectab[] = {
   {0x82, (interrupt_handler_t)TIM5_UPD_OVF_BRK_TRG_IRQHandler}, /* irq13 - TIM5 Update/Overflow/Break/Trigger interrupt  */
   {0x82, (interrupt_handler_t)TIM5_CAP_COM_IRQHandler}, /* irq14 - TIM5 Capture/Compare interrupt */
 	
-#else /*STM8S208, STM8S207, STM8S105 or STM8S103 or STM8S001 or STM8AF62Ax or STM8AF52Ax or STM8AF626x*/
+#else /*STM8S208, STM8S207, STM8S105 or STM8S103 or STM8AF62Ax or STM8AF52Ax or STM8AF626x*/
   {0x82, (interrupt_handler_t)TIM2_UPD_OVF_BRK_IRQHandler}, /* irq13 - TIM2 Update/Overflow/Break interrupt  */
   {0x82, (interrupt_handler_t)TIM2_CAP_COM_IRQHandler}, /* irq14 - TIM2 Capture/Compare interrupt */
 #endif /*STM8S903*/
@@ -75,14 +75,14 @@ struct interrupt_vector const _vectab[] = {
 	{0x82, (interrupt_handler_t)UART2_TX_IRQHandler}, /* irq20 - UART2 Tx interrupt */
 	{0x82, (interrupt_handler_t)UART2_RX_IRQHandler}, /* irq21 - UART2 Rx interrupt */
 
-#else /* STM8S103, STM8S001, STM8S903, STM8AF622x */
+#else /* STM8S103, STM8S903, STM8AF622x */
 	{0x82, (interrupt_handler_t)NonHandledInterrupt}, /* irq20 - Reserved */
 	{0x82, (interrupt_handler_t)NonHandledInterrupt}, /* irq21 - Reserved */
 #endif /* STM8S208, STM8S207, STM8AF52Ax or STM8AF62Ax */
 
 #if defined(STM8S208) || defined(STM8S207) || defined(STM8S007) || defined(STM8AF52Ax) || defined(STM8AF62Ax)
 	{0x82, (interrupt_handler_t)ADC2_IRQHandler}, /* irq22 - ADC2 end of conversion interrupt */
-#else /* STM8S105, STM8S103,STM8S001, STM8S903, STM8AF622x   */
+#else /* STM8S105, STM8S103, STM8S903, STM8AF622x   */
 	{0x82, (interrupt_handler_t)ADC1_IRQHandler}, /* irq22 - ADC1 end of conversion/Analog watchdog interrupts */
 
 #endif /* STM8S208, STM8S207, STM8AF52Ax or STM8AF62Ax */

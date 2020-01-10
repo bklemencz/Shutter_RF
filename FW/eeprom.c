@@ -64,7 +64,8 @@ void EEPROM_Program4Byte(uint16_t Address, uint32_t Data)
 uint32_t EEPROM_Read4Byte(uint16_t Address)
 {
   uint32_t Temp;
-  Temp = (EEPROM_ReadByte(Address) * 0x1000000) + (EEPROM_ReadByte(Address+1) * 0x10000) + (EEPROM_ReadByte(Address+2) * 0x100) + EEPROM_ReadByte(Address+3);
+  Temp = (EEPROM_ReadByte(Address) * 0x1000000) + (EEPROM_ReadByte(Address+1) * (uint32_t)0x10000) + (EEPROM_ReadByte(Address+2) * (uint32_t)0x100) + EEPROM_ReadByte(Address+3);
+  //Temp = (EEPROM_ReadByte(Address) << 24) + (EEPROM_ReadByte(Address+1) << 16) + (EEPROM_ReadByte(Address+2) << 8) + EEPROM_ReadByte(Address+3);
   return Temp;
 }
 
