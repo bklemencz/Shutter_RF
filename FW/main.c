@@ -2,6 +2,7 @@
 #include "stm8s.h"
 #include "EV1527.h"
 #include "eeprom.h"
+#include "delay.h"
 
 /*
 PINOUT
@@ -28,6 +29,7 @@ RF - 	24bit base code: start - stop - reverse - stop
 		5 sepearte codes for group controls
 External SW debouncing
 Position time learning : shutter starts at about middle position - external sw (long press 5s) - short press at top end stop starts go down, short press at bottom endstop.
+Code learning : External switch 10s - Remote code long
 
 SERIAL PROTOCOL ( 8 bytes, if byte not used send 0):
 Byte
@@ -45,6 +47,8 @@ Byte
 	66 - Store remote code 3 followed by 4 bytes, High byte first
 	67 - Store remote code 4 followed by 4 bytes, High byte first
 	68 - Store remote code 5 followed by 4 bytes, High byte first
+	80 - Transmit code followed by 4 bytes, High First
+	81 - Transmit code for learning (long code transmit)
 	90 - Store Shutter Travel time
 	128 - Store Group ID followed by 1 byte Device ID
 
@@ -56,7 +60,7 @@ Byte
 	2 - Unknown Command
 */
 
-#define F_CPU 16000000UL
+
 
 const uint8_t RELAY_DEADTIME_1ms = 10;			// relay contact release time 10ms
 const uint8_t RELAY_ENDSTOP_TIMEOUT_S = 120;	// maximum relay energising time in seconds
@@ -64,6 +68,8 @@ const uint8_t EXT_SW_DEBOUNCE_MS = 100;			//external switch debounce time in ms
 const uint8_t EXT_SW_LONG_PRESS_TIME_S = 5;
 const uint8_t EXT_SW_LEARN_PRESS_TIME_S = 10;
 const uint8_t SERIAL_FUNCTION_ID = 6;
+const uint8_t EV1527_Transmit_Repeat = 10;
+
 
 uint32_t EV1527_Rec_Code;
 uint32_t EV1527_Valid_Rec_Code;
@@ -78,6 +84,7 @@ volatile uint16_t EV1527_LowTime;
 volatile bool EV1527_BitReady;
 uint32_t EV1527_Stored_Codes[5];				//storing a maximum of 5 codes
 uint8_t EV1527_Last_Code_Position;
+uint32_t EV1527_Transmit_Data;
 
 extern volatile uint16_t Timer_last_edge_10us;
 uint16_t Timer_ms_to_s;
@@ -109,25 +116,7 @@ uint8_t Serial_DevID;
 
 
 
-static void _delay_cycl( uint16_t ticks )
-{
-  #define T_COUNT(x) (( F_CPU * x / 1000000UL )-3)/3)
-	// ldw X, __ticks ; insert automaticaly
-	_asm("nop\n $N:\n decw X\n jrne $L\n nop\n ", ticks);
-}
 
-void _delay_us( uint16_t us )
-{
-	_delay_cycl( (uint16_t)( T_COUNT(us) );
-}
-
-void _delay_ms( uint16_t ms )
-{
-	while ( ms-- )
-	{
-		_delay_us( 1000 );
-	}
-}
 
 void InitTIM4(void)
 {
@@ -233,7 +222,7 @@ void IO_Init (void)
 	GPIO_Init(GPIOD,GPIO_PIN_4,GPIO_MODE_IN_PU_NO_IT);
 	GPIO_Init(GPIOD,GPIO_PIN_2,GPIO_MODE_OUT_PP_LOW_FAST);	//Relay1
 	GPIO_Init(GPIOD,GPIO_PIN_3,GPIO_MODE_OUT_PP_LOW_FAST);	//Relay2
-	// GPIO_Init(GPIOD,GPIO_PIN_4,GPIO_MODE_IN_FL_NO_IT);			//RF_RX
+	
 	GPIO_Init(GPIOB,GPIO_PIN_5,GPIO_MODE_OUT_OD_HIZ_FAST);	//LED
 	
 	EXTI_SetExtIntSensitivity(EXTI_PORT_GPIOA,EXTI_SENSITIVITY_RISE_FALL);
@@ -407,6 +396,21 @@ void Shutter_RF_Task(void)
 
 void Ext_SW_Task(void)
 {
+	// External switch handling
+	if (((GPIOD->IDR & GPIO_PIN_1) != 0) && (Ext_SW_Debounce_Timeout_ms == 0) && (Ext_SW_Pressed == TRUE))
+	{
+		Ext_SW_Released = TRUE;
+		Ext_SW_Pressed = FALSE;
+		Ext_SW_Debounce_Timeout_ms = EXT_SW_DEBOUNCE_MS;
+	}
+	if (((GPIOD->IDR & GPIO_PIN_1) == 0) && (Ext_SW_Debounce_Timeout_ms == 0) && (Ext_SW_Released == FALSE))
+	{
+		Ext_SW_Released = FALSE;
+		Ext_SW_Pressed = TRUE;
+		Ext_SW_Debounce_Timeout_ms = EXT_SW_DEBOUNCE_MS;
+	}
+	
+	// Normal mode switch parsing
 	if (!Shutter_Learning)
 	{
 		if (Ext_SW_Released && (Ext_SW_Pressed_Time_s < EXT_SW_LONG_PRESS_TIME_S))
@@ -524,6 +528,7 @@ void Ext_SW_Task(void)
 void Timer_Task(void)
 {
 	
+	//mS based Timer
 	if (Timer_10us_to_ms >= 100)
 	{
 		Timer_10us_to_ms = 0;
@@ -534,6 +539,7 @@ void Timer_Task(void)
 		Ext_SW_Debounce_Timeout_ms--;
 
 	}
+	//Seconds based timer
 	if (Timer_ms_to_s == 0)
 	{
 		Timer_ms_to_s = 1000;
@@ -542,18 +548,8 @@ void Timer_Task(void)
 		if (Shutter_Learning) Shutter_Full_Motion_Time_s++;
 		//1s tasks
 	}
-	if (((GPIOD->IDR & GPIO_PIN_4) != 0) && (Ext_SW_Debounce_Timeout_ms == 0) && (Ext_SW_Pressed == TRUE))
-	{
-		Ext_SW_Released = TRUE;
-		Ext_SW_Pressed = FALSE;
-		Ext_SW_Debounce_Timeout_ms = EXT_SW_DEBOUNCE_MS;
-	}
-	if (((GPIOD->IDR & GPIO_PIN_4) == 0) && (Ext_SW_Debounce_Timeout_ms == 0) && (Ext_SW_Released == FALSE))
-	{
-		Ext_SW_Released = FALSE;
-		Ext_SW_Pressed = TRUE;
-		Ext_SW_Debounce_Timeout_ms = EXT_SW_DEBOUNCE_MS;
-	}
+	
+	
 }
 
 void Serial_Task(void)
@@ -604,30 +600,48 @@ void Serial_Task(void)
 				Serial_Reply(0);
 				break;
 			case 64:
-				EV1527_Stored_Codes[0] = (Serial_Rx_Buffer[4] * 0x1000000) + (Serial_Rx_Buffer[5] *  0x10000 ) + (Serial_Rx_Buffer[6] * 0x100) + Serial_Rx_Buffer[7];
+				EV1527_Stored_Codes[0] = (Serial_Rx_Buffer[4] * 0x1000000) + (Serial_Rx_Buffer[5] *  (uint32_t)0x10000 ) + (Serial_Rx_Buffer[6] * (uint32_t)0x100) + Serial_Rx_Buffer[7];
 				Save_Codes();
 				Serial_Reply(0);
 				break;
 			case 65:
-				EV1527_Stored_Codes[1] = (Serial_Rx_Buffer[4] * 0x1000000) + (Serial_Rx_Buffer[5] *  0x10000 ) + (Serial_Rx_Buffer[6] * 0x100) + Serial_Rx_Buffer[7];
+				EV1527_Stored_Codes[1] = (Serial_Rx_Buffer[4] * 0x1000000) + (Serial_Rx_Buffer[5] *  (uint32_t)0x10000 ) + (Serial_Rx_Buffer[6] * (uint32_t)0x100) + Serial_Rx_Buffer[7];
 				Save_Codes();
 				Serial_Reply(0);
 				break;
 			case 66:
-				EV1527_Stored_Codes[2] = (Serial_Rx_Buffer[4] * 0x1000000) + (Serial_Rx_Buffer[5] *  0x10000 ) + (Serial_Rx_Buffer[6] * 0x100) + Serial_Rx_Buffer[7];
+				EV1527_Stored_Codes[2] = (Serial_Rx_Buffer[4] * 0x1000000) + (Serial_Rx_Buffer[5] *  (uint32_t)0x10000 ) + (Serial_Rx_Buffer[6] * (uint32_t)0x100) + Serial_Rx_Buffer[7];
 				Save_Codes();
 				Serial_Reply(0);
 				break;
 			case 67:
-				EV1527_Stored_Codes[3] = (Serial_Rx_Buffer[4] * 0x1000000) + (Serial_Rx_Buffer[5] *  0x10000 ) + (Serial_Rx_Buffer[6] * 0x100) + Serial_Rx_Buffer[7];
+				EV1527_Stored_Codes[3] = (Serial_Rx_Buffer[4] * 0x1000000) + (Serial_Rx_Buffer[5] *  (uint32_t)0x10000 ) + (Serial_Rx_Buffer[6] * (uint32_t)0x100) + Serial_Rx_Buffer[7];
 				Save_Codes();
 				Serial_Reply(0);
 				break;
 			case 68:
-				EV1527_Stored_Codes[4] = (Serial_Rx_Buffer[4] * 0x1000000) + (Serial_Rx_Buffer[5] *  0x10000 ) + (Serial_Rx_Buffer[6] * 0x100) + Serial_Rx_Buffer[7];
+				EV1527_Stored_Codes[4] = (Serial_Rx_Buffer[4] * 0x1000000) + (Serial_Rx_Buffer[5] *  (uint32_t)0x10000 ) + (Serial_Rx_Buffer[6] * (uint32_t)0x100) + Serial_Rx_Buffer[7];
 				Save_Codes();
 				Serial_Reply(0);
 				break;
+			case 80:
+				EV1527_Transmit_Data = (Serial_Rx_Buffer[4] * 0x1000000) + (Serial_Rx_Buffer[5] *  (uint32_t)0x10000 ) + (Serial_Rx_Buffer[6] * (uint32_t)0x100) + Serial_Rx_Buffer[7];
+				if (Serial_Rx_Buffer[7] == 0) 
+				{
+					EV1527_Transmit(EV1527_Transmit_Data,24,EV1527_Transmit_Repeat);
+				} else
+				{
+					EV1527_Transmit(EV1527_Transmit_Data,32,EV1527_Transmit_Repeat);
+				}
+			case 81:
+				EV1527_Transmit_Data = (Serial_Rx_Buffer[4] * 0x1000000) + (Serial_Rx_Buffer[5] *  (uint32_t)0x10000 ) + (Serial_Rx_Buffer[6] * (uint32_t)0x100) + Serial_Rx_Buffer[7];
+				if (Serial_Rx_Buffer[7] == 0) 
+				{
+					EV1527_Transmit(EV1527_Transmit_Data,24,EV1527_Transmit_Repeat*3);
+				} else
+				{
+					EV1527_Transmit(EV1527_Transmit_Data,32,EV1527_Transmit_Repeat*3);
+				}	
 			case 90:
 				Shutter_Full_Motion_Time_s = Serial_Rx_Buffer[4];
 				Save_Learned_Time();
