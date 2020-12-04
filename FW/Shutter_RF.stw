@@ -8,5 +8,5 @@ Filename=shutter_rf.stp
 Dependencies=
 [Options]
 ActiveProject=shutter_rf
-ActiveConfig=Debug
+ActiveConfig=Release
 AddSortedElements=0

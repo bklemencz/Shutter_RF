@@ -394,7 +394,7 @@ void Shutter_RF_Task(void)
 	}
 }
 
-void Ext_SW_Task(void)
+void Ext_SW_Check(void)
 {
 	// External switch handling
 	if (((GPIOD->IDR & GPIO_PIN_1) != 0) && (Ext_SW_Debounce_Timeout_ms == 0) && (Ext_SW_Pressed == TRUE))
@@ -409,6 +409,11 @@ void Ext_SW_Task(void)
 		Ext_SW_Pressed = TRUE;
 		Ext_SW_Debounce_Timeout_ms = EXT_SW_DEBOUNCE_MS;
 	}
+}
+
+void Ext_SW_Task(void)
+{
+	Ext_SW_Check();
 	
 	// Normal mode switch parsing
 	if (!Shutter_Learning)

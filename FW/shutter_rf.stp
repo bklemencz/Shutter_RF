@@ -220,7 +220,7 @@ String.6.0=2019,12,5,18,54,28
 [Root.Source Files]
 ElemType=Folder
 PathName=Source Files
-Child=Root.Source Files.ev1527.c
+Child=Root.Source Files.delay.c
 Next=Root.Include Files
 Config.0=Root.Source Files.Config.0
 Config.1=Root.Source Files.Config.1
@@ -290,6 +290,11 @@ String.3.0=
 String.4.0=
 String.5.0=
 String.6.0=2019,12,5,18,54,28
+
+[Root.Source Files.delay.c]
+ElemType=File
+PathName=delay.c
+Next=Root.Source Files.ev1527.c
 
 [Root.Source Files.ev1527.c]
 ElemType=File
@@ -403,7 +408,7 @@ PathName=stm8s_it.c
 [Root.Include Files]
 ElemType=Folder
 PathName=Include Files
-Child=Root.Include Files.ev1527.h
+Child=Root.Include Files.delay.h
 Config.0=Root.Include Files.Config.0
 Config.1=Root.Include Files.Config.1
 
@@ -472,6 +477,11 @@ String.3.0=
 String.4.0=
 String.5.0=
 String.6.0=2019,12,5,18,54,28
+
+[Root.Include Files.delay.h]
+ElemType=File
+PathName=delay.h
+Next=Root.Include Files.ev1527.h
 
 [Root.Include Files.ev1527.h]
 ElemType=File
