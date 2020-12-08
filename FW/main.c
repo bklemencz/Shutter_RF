@@ -65,7 +65,7 @@ Byte
 
 #define SERIAL_BAUD	57600
 
-const uint8_t RELAY_DEADTIME_1ms = 10;			// relay contact release time 10ms
+const uint8_t RELAY_DEADTIME_1ms = 20;			// relay contact release time 10ms
 const uint8_t RELAY_ENDSTOP_TIMEOUT_S = 120;	// maximum relay energising time in seconds
 const uint8_t EXT_SW_DEBOUNCE_MS = 100;			//external switch debounce time in ms
 const uint8_t EXT_SW_LONG_PRESS_TIME_S = 5;
@@ -304,18 +304,21 @@ void Relay_Channel_Set(uint8_t Channel)
 		}
 		else if ((Channel ==1) && (Relay_Change_Delay_1ms == 0))
 		{
-			GPIO_WriteHigh(GPIOD, GPIO_PIN_2);
 			GPIO_WriteLow(GPIOD,GPIO_PIN_3);
+			if (Relay_Prev_State == 2) _delay_ms(200);
+			GPIO_WriteHigh(GPIOD, GPIO_PIN_2);
 			GPIO_WriteLow(GPIOB,GPIO_PIN_5);
 			Relay_Change_Delay_1ms = RELAY_DEADTIME_1ms;
+			Relay_Prev_State = 1;
 		}
 		else if ((Channel ==2) && (Relay_Change_Delay_1ms == 0))
 		{
 			GPIO_WriteLow(GPIOD, GPIO_PIN_2);
+			if (Relay_Prev_State == 1)_delay_ms(200);
 			GPIO_WriteHigh(GPIOD,GPIO_PIN_3);
 			GPIO_WriteLow(GPIOB,GPIO_PIN_5);
 			Relay_Change_Delay_1ms = RELAY_DEADTIME_1ms;
-
+			Relay_Prev_State = 2;
 		}
 		Relay_Changed = FALSE;
 	}
@@ -519,6 +522,7 @@ void Ext_SW_Task(void)
 	}
 	
 }
+
 void Timer_Task(void)
 {
 	
