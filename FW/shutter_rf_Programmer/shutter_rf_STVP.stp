@@ -16,5 +16,5 @@ File0=E:\Project\Shutter_RF\FW\Debug\shutter_rf.s19
 ProgramEvenIfBlank=0
 [OPTION BYTE]
 Count=1
-File0=E:\Project\Shutter_RF\FW\shutter_rf_Programmer\shutter_rf_STVP_OPTION BYTE.hex
+File0=J:\Project\Shutter Ctrl\FW\shutter_rf_Programmer\shutter_rf_STVP_OPTION BYTE.hex
 ProgramEvenIfBlank=0

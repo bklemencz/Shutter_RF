@@ -50,6 +50,8 @@ extern volatile bool Ext_SW_Released;
 extern volatile uint8_t Ext_SW_Debounce_Timeout_ms;
 extern volatile uint8_t Serial_Rx_Buffer[5];
 extern volatile uint8_t Serial_Rx_Counter;
+extern uint8_t Serial_GroupID;
+extern uint8_t Serial_DevID;
 
 /* Private function prototypes -----------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/
@@ -388,12 +390,27 @@ INTERRUPT_HANDLER(TIM1_CAP_COM_IRQHandler, 12)
   */
  INTERRUPT_HANDLER(UART1_RX_IRQHandler, 18)
  {
-    /* In order to detect unexpected events during development,
+   /* In order to detect unexpected events during development,
        it is recommended to set a breakpoint on the following instruction.
     */
-   Serial_Rx_Buffer[Serial_Rx_Counter] = UART1_ReceiveData8();
-   Serial_Rx_Counter++;
-   if(Serial_Rx_Counter == 8) UART1_ITConfig(UART1_IT_RXNE_OR,DISABLE);
+   uint8_t BRec;
+
+   BRec = UART1->SR;
+   if (BRec & UART1_SR_RXNE)
+     BRec = ((uint8_t)UART1->DR);
+
+   if (Serial_Rx_Counter < 7)
+   {
+     Serial_Rx_Buffer[Serial_Rx_Counter] = BRec;
+     Serial_Rx_Counter++;
+     if ((Serial_Rx_Counter == 1) && (Serial_Rx_Buffer[0] != 'S'))
+       Serial_Rx_Counter = 0;
+     if ((Serial_Rx_Counter == 2) && !((Serial_Rx_Buffer[1] == Serial_DevID) || (Serial_Rx_Buffer[1] == Serial_GroupID) || (Serial_Rx_Buffer[1] == 255)))
+       Serial_Rx_Counter = 0;
+   }
+
+   if (Serial_Rx_Counter == 7)
+     UART1_ITConfig(UART1_IT_RXNE_OR, DISABLE);
  }
 #endif /* (STM8S208) || (STM8S207) || (STM8S103) || (STM8S903) || (STM8AF62Ax) || (STM8AF52Ax) */
 
